@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+{% extends 'accounts/main.html' %}
+{% load static %}
+<html>
+<head>
+    <title>Cart</title>
+</head>
+<body>
+    <h1>Your Cart</h1>
+    <p>Total Quantity: {{ total_quantity }}</p>
+    {% for item in cart_items %}
+        <div>
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+            <p>Product: {{ item.product.name }}</p>
+            <p>Price: {{ item.product.price }}</p>
+            <p>Quantity: {{ item.quantity }}</p>
+            <a href="{% url 'delete_from_cart' item.id %}">Delete</a>
+        </div>
+    {% endfor %}
+</body>
+</html>
+
+
+
+
+    
