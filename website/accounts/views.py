@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.hashers import make_password
 from .forms import RegistrationForm, LoginForm
 from .models import CustomUser, Product, Cart
 from .models import *
+from django.http import HttpResponseRedirect
 
 # Create your views here.
 
@@ -38,28 +39,22 @@ def home(request):
     context = {'products':products}
     return render(request, 'accounts/home.html', context)
 
-
-
 def cart(request):
-    user = CustomUser.objects.get(username=request.session['username'])
-    cart_items = Cart.objects.filter(user=user)
-    total_quantity = 0
-    for item in cart_items:
-        total_quantity += item.quantity
-    return render(request, 'cart.html', {'cart_items': cart_items, 'total_quantity': total_quantity})
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = CartItem.objects.filter(cart=cart)
+    return render(request, 'accounts/cart.html', {'cart_items': cart_items})
 
 def add_to_cart(request, product_id):
-    user = CustomUser.objects.get(username=request.session['username'])
-    product = Product.objects.get(pk=product_id)
-    Cart.objects.create(user=user, product=product)
-    return redirect('cart')
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    product = get_object_or_404(Product, pk=product_id)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, product_name=product.name)
+    if not created:
+        cart_item.quantity += 1
+        cart_item.price = Product.price
+        cart_item.save()
+    return HttpResponseRedirect('/cart/')
 
-def delete_from_cart(request, cart_id):
-    cart_item = Cart.objects.get(pk=cart_id)
-    user = CustomUser.objects.get(username=request.session['username'])
-    if cart_item.user == user:
-        quantity = cart_item.quantity
-        cart_item.delete()
-        return redirect('cart')
-    else:
-        return redirect('cart')
+def remove_from_cart(request, cart_item_id):
+    cart_item = get_object_or_404(CartItem, pk=cart_item_id)
+    cart_item.delete()
+    return HttpResponseRedirect('/cart/')
